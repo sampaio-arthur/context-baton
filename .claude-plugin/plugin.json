@@ -1,0 +1,37 @@
+{
+  "name": "baton",
+  "version": "0.1.0",
+  "description": "Ask-first context handoff: at a context percentage you choose, asks whether to hand off, then writes a structured handoff and continues in a fresh session",
+  "author": {
+    "name": "Arthur Sampaio"
+  },
+  "homepage": "https://github.com/sampaio-arthur/context-baton",
+  "repository": "https://github.com/sampaio-arthur/context-baton",
+  "license": "MIT",
+  "keywords": [
+    "context",
+    "handoff",
+    "session",
+    "mod"
+  ],
+  "userConfig": {
+    "thresholdPercent": {
+      "type": "number",
+      "title": "Handoff threshold (%)",
+      "description": "Context usage, in percent of the window, at which Baton asks whether to hand off. Whole number from 10 to 90.",
+      "default": 40
+    },
+    "snoozePoints": {
+      "type": "number",
+      "title": "Snooze after No (points)",
+      "description": "After you answer No, how many percentage points usage must grow before Baton asks again. Whole number from 1 to 50.",
+      "default": 10
+    },
+    "handoffDir": {
+      "type": "string",
+      "title": "Handoff folder",
+      "description": "Folder inside the project where handoff documents are saved, relative to the project root. Old documents are not deleted automatically. If this folder would fall inside Claude Code's own folder (when the project is your home folder), ~/.baton/handoff is used instead.",
+      "default": ".claude/handoff"
+    }
+  }
+}

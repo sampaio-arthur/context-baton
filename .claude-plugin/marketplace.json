@@ -1,0 +1,14 @@
+{
+  "name": "baton",
+  "description": "Baton, an ask-first context handoff mod for Claude Code",
+  "owner": {
+    "name": "Arthur Sampaio"
+  },
+  "plugins": [
+    {
+      "name": "baton",
+      "source": "./",
+      "description": "Ask-first context handoff: at a context percentage you choose, asks whether to hand off, then writes a structured handoff and continues in a fresh session"
+    }
+  ]
+}

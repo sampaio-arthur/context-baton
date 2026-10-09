@@ -1,0 +1,8 @@
+# Type definitions Claude Code generates when it loads the plugin
+.claude-plugin/types/
+
+# Handoff documents written by Baton when it runs in this repository
+.claude/handoff/
+
+# Personal instructions, not shared
+CLAUDE.local.md
