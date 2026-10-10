@@ -8,6 +8,7 @@
   },
   "homepage": "https://github.com/sampaio-arthur/context-baton",
   "repository": "https://github.com/sampaio-arthur/context-baton",
+  "privacyPolicyUrl": "https://github.com/sampaio-arthur/context-baton/blob/main/PRIVACY.md",
   "license": "MIT",
   "keywords": [
     "context",

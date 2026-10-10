@@ -125,6 +125,7 @@ The handoff itself is written by a fork of the conversation (one model call, two
 
 - [Guide](./docs/GUIDE.md): full behaviour, failure and recovery table, troubleshooting, Windows notes, FAQ
 - [Manual checks](./tests/MANUAL.md)
+- [Privacy](./PRIVACY.md): what the plugin stores and where
 
 ## Development
 

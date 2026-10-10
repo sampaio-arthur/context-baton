@@ -273,7 +273,7 @@ Reports from other platforms are welcome. Please open an issue with your OS, ter
 
 ## Security and privacy
 
-A mod runs inside Claude Code with your permissions. This is everything Baton does with them:
+A mod runs inside Claude Code with your permissions. This is everything Baton does with them (see also the [privacy policy](../PRIVACY.md)):
 
 - **Reads** context usage, the session id and project folder, the number of prompts you have sent (for the pause after a failed handoff), the state of background tasks and subagents, and seven environment variables used to place the handoff folder: `USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`.
 - **Reads no files and lists no folders.** Baton only writes handoff documents. It never reads a handoff document back, or any other file. A git worktree is its own project: its handoff history and undelivered handoffs are not shared with other worktrees of the same repository.
