@@ -106,7 +106,6 @@ export function world(on: On, tokensOrNull: number | null = 400_000, window = 1_
     if (ctl.failUsage) return { deny: 'usage boom' }
     return { value: { startedAt: 0, context: { tokens: tokensNow(), window, ...(ctl.percent === undefined ? {} : { percent: ctl.percent }) }, rateLimits: [] } }
   })
-  on('fs.read', () => ({ deny: 'missing' }))
   on('env.get', (_$, e: { name: string }) => ({ value: ctl.env[e.name] }))
   // Written files by path, forward slashes
   const files = new Map<string, string>()

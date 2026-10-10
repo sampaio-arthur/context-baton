@@ -14,7 +14,7 @@ import { M, failureOf, failureText, shortReason } from '../src/messages'
 import { COMMAND, FALLBACK_COMMAND } from '../src/name'
 import { percentOf, shouldPrompt } from '../src/monitor'
 import { statusText, usageText } from '../src/status'
-import { SEEN_KEY, describeUsage, documentId, encodeProject, failureKey, handedOffKey, handoffFolder, handoffsKey, latestForeignPending, pendingKey, pruneSeen, snoozeKey, workspaceOf } from '../src/storage'
+import { SEEN_KEY, describeUsage, documentId, encodeProject, failureKey, handedOffKey, handoffFolder, handoffsKey, latestForeignPending, pendingKey, pruneSeen, snoozeKey } from '../src/storage'
 import type { Failure, HandoffFolder, Kind, Pending, Saved, Snooze, Stage, Usage } from '../src/storage'
 
 // In-process state. A module reload clears it.
@@ -76,15 +76,11 @@ type ForkOutcome = ForkResult | { isAnswered: false; reason: 'timeout' }
 const forkWithin = ($: EngineInterface, prompt: string, ms: number): Promise<ForkOutcome> =>
   within($, $.model.fork({ prompt }), ms, { isAnswered: false as const, reason: 'timeout' as const })
 
-async function readText($: EngineInterface, path: string) {
-  try { return await $.fs.read(path) } catch { return '' }
-}
-
-// Project key: the session's workspace (the main working tree for a git worktree), encoded.
+// Project key: the session's root folder, encoded. A git worktree is its own project: no file is read
 // Not $.session.repo(): that follows the current directory, which moves with Bash cd
 async function projectKey($: EngineInterface) {
   const root = await $.session.root()
-  return encodeProject(workspaceOf(root, await readText($, `${root}/.git`)))
+  return encodeProject(root)
 }
 
 // First time a session-scoped key was seen, for pruning; written once per key

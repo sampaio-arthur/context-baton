@@ -68,18 +68,6 @@ export function pruneSeen(keys: readonly string[], seen: Record<string, number>,
 
 export const slash = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
 export const encodeProject = (p: string) => slash(p).replace(/[^A-Za-z0-9]/g, '-')
-export const isAbs = (p: string) => /^[A-Za-z]:\//.test(p) || p.startsWith('/')
-
-// Drops . and .. segments (never past a drive letter or the leading /)
-export function resolveDots(p: string) {
-  const parts: string[] = []
-  for (const seg of p.split('/')) {
-    if (seg === '.') continue
-    if (seg === '..') { if (parts.length > 1) parts.pop(); continue }
-    parts.push(seg)
-  }
-  return parts.join('/')
-}
 
 // Where documents are written. Normally {root}/{handoffDir}. Redirected to ~/.baton/handoff when:
 // - `claude`: that folder falls inside Claude Code's own folder (the project root is the home folder, so
@@ -121,14 +109,4 @@ function isInside(path: string, folder: string) {
   const p = windows ? path.toLowerCase() : path
   const f = windows ? folder.toLowerCase() : folder
   return p === f || p.startsWith(`${f}/`)
-}
-
-// The workspace a session belongs to: its root folder, or for a git worktree (where .git is a file
-// "gitdir: <main>/.git/worktrees/<name>") the main working tree, so worktrees share one project key
-export function workspaceOf(root: string, gitFile: string) {
-  const r = slash(root)
-  const m = /^gitdir:\s*(.+?)\/\.git\/worktrees\/[^/]+\s*$/m.exec(slash(gitFile))
-  if (!m?.[1]) return r
-  const main = slash(m[1])
-  return isAbs(main) ? main : resolveDots(`${r}/${main}`)
 }

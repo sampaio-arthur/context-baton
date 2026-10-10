@@ -3,7 +3,7 @@ import { expect, test } from 'claude-code/testing'
 import { snapshotOf } from '../src/deferral'
 import { forkFailure, submitText } from '../src/handoff'
 import { COMMAND, DISPLAY_NAME, FALLBACK_COMMAND, NAME, TAG } from '../src/name'
-import { encodeProject, pruneSeen, workspaceOf } from '../src/storage'
+import { encodeProject, pruneSeen } from '../src/storage'
 
 test('names: the plugin is context-baton; the command, its fallback, and the tag keep the short name', () => {
   expect(NAME).toBe('context-baton')
@@ -38,11 +38,9 @@ test('forkFailure explains timeout and nothing-to-fork, passes others through', 
   expect(forkFailure('api-error')).toBe('api-error')
 })
 
-test('workspaceOf: plain folder, worktree with absolute and relative gitdir', () => {
-  expect(workspaceOf('C:\\proj\\', '')).toBe('C:/proj')
-  expect(workspaceOf('C:/wt/a', 'gitdir: C:/proj/.git/worktrees/a\n')).toBe('C:/proj')
-  expect(workspaceOf('C:/proj/wt/a', 'gitdir: ../../.git/worktrees/a')).toBe('C:/proj')
+test('encodeProject: the project key comes from the root folder alone', () => {
   expect(encodeProject('C:/proj')).toBe('C--proj')
+  expect(encodeProject('/home/me/wt/a')).toBe('-home-me-wt-a')
 })
 
 test('pruneSeen records new session keys and expires them after 30 days', () => {

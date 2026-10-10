@@ -276,8 +276,8 @@ Reports from other platforms are welcome. Please open an issue with your OS, ter
 A mod runs inside Claude Code with your permissions. This is everything Baton does with them:
 
 - **Reads** context usage, the session id and project folder, the number of prompts you have sent (for the pause after a failed handoff), the state of background tasks and subagents, and seven environment variables used to place the handoff folder: `USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`.
-- **Reads one file**, `<project>/.git`. In a git worktree that file names the main repository, so all worktrees of one repository share their handoff history and undelivered handoffs. In a normal repository `.git` is a folder; the read fails and is ignored. Baton never reads a handoff document back, or any other file.
-- **Lists** the handoff folder, to show in `/baton` how many `.md` documents it holds.
+- **Reads no files.** Baton never reads a handoff document back, or any other file. A git worktree is its own project: its handoff history and undelivered handoffs are not shared with other worktrees of the same repository.
+- **Lists** the handoff folder, only to show in `/baton` how many `.md` documents it holds. File names are counted, not read.
 - **Writes** exactly one kind of file: `<handoff folder>/<session-id>.md`, or `~/.baton/handoff/<session-id>.md` when redirected (see [Where documents are saved](#where-documents-are-saved)). The code refuses a session id that is not letters, digits, `-` and `_` (at most 128 characters), so the file can neither leave the folder nor get another extension, and the handoff folder setting must stay inside the project and outside the folders Claude Code loads commands, agents, skills, rules and output styles from. It never writes a build, start-up, settings or instructions file.
 - **Stores** small entries in its own plugin store (pending handoffs, snooze marks, the latest handoffs and failure). Session entries are removed after 30 days.
 - **Asks** with Claude Code's own question dialog.
