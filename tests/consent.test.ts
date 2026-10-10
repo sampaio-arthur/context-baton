@@ -21,12 +21,12 @@ test('question and header', () => {
 })
 
 test('rejectionOf: user dismissals are quiet, anything else carries its reason', () => {
-  const esc = new Error('baton: $.ui.ask: no answer (The user doesn\'t want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_strin)')
+  const esc = new Error('context-baton: $.ui.ask: no answer (The user doesn\'t want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_strin)')
   expect(rejectionOf(esc)).toEqual({ kind: 'dismissed' })
-  expect(rejectionOf(new Error('baton: $.ui.ask: no answer (the dialog was dismissed)'))).toEqual({ kind: 'dismissed' })
-  expect(rejectionOf(new Error('baton: $.ui.ask: no answer (Permission to use AskUserQuestion has been denied by policy)')))
+  expect(rejectionOf(new Error('context-baton: $.ui.ask: no answer (the dialog was dismissed)'))).toEqual({ kind: 'dismissed' })
+  expect(rejectionOf(new Error('context-baton: $.ui.ask: no answer (Permission to use AskUserQuestion has been denied by policy)')))
     .toEqual({ kind: 'other', reason: 'Permission to use AskUserQuestion has been denied by policy' })
-  const none = 'HooksError: baton: $.tool.call: no tool named "AskUserQuestion" in this session'
+  const none = 'HooksError: context-baton: $.tool.call: no tool named "AskUserQuestion" in this session'
   expect(rejectionOf(new Error(none))).toEqual({ kind: 'unavailable', reason: none })
   expect(rejectionOf('something else')).toEqual({ kind: 'other', reason: 'something else' })
 })

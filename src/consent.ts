@@ -1,10 +1,8 @@
 // The consent question and how any answer or rejection maps to yes / no. Pure: no $.
-import { NAME } from './name'
-
 export const YES = 'Yes'
 export const NO = 'No'
 // Shown as a chip beside the question (12 characters at most)
-export const HEADER = NAME.charAt(0).toUpperCase() + NAME.slice(1)
+export const HEADER = 'Baton'
 
 export const questionOf = (percent: number) => `Context is at ${percent}%. Hand off and continue in a new session?`
 

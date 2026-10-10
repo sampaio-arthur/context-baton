@@ -1,8 +1,8 @@
-# Baton guide
+# Context Baton guide
 
 **Ask-first context handoff for Claude Code.**
 
-When your context window reaches a percentage you choose, Baton asks if you want to hand off. Say yes and it writes a structured handoff document, starts a fresh session, and delivers the handoff to it. You type nothing else.
+When your context window reaches a percentage you choose, Context Baton (Baton for short) asks if you want to hand off. Say yes and it writes a structured handoff document, starts a fresh session, and delivers the handoff to it. You type nothing else.
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Tested on Claude Code 2.1.295](https://img.shields.io/badge/tested%20on-Claude%20Code%202.1.295-orange)
@@ -50,11 +50,11 @@ Context is at 41%. Hand off and continue in a new session?
 Choose **Yes** and the rest is automatic:
 
 ```text
-● baton: handoff saved to .claude/handoff/5d5c9ead-….md
+handoff saved to .claude/handoff/5d5c9ead-….md
 
 > /clear
 
-› Prompt from the baton plugin
+› Prompt from the context-baton plugin
   [baton] The previous conversation was cleared automatically because context
   reached 41% of the window and the user agreed to hand off. Here is the handoff: …
 
@@ -76,7 +76,7 @@ claude --version
 
 ```bash
 claude plugin marketplace add sampaio-arthur/context-baton
-claude plugin install baton@baton
+claude plugin install context-baton@context-baton
 ```
 
 The install may print "3 userConfig options not yet set". That message is informational; the defaults apply.
@@ -94,18 +94,18 @@ claude --plugin-dir ./context-baton
 /baton
 ```
 
-You should see your context usage, the current settings, and the command list:
+You should see your context usage, the current settings, and the command list. Each line is shown as a message from the `context-baton` plugin, and how the interface marks that varies:
 
 ```text
-● baton: Context: 5% (46,405 of 1,000,000 tokens) · threshold 40% (not reached)
-● baton: Settings: threshold 40%, snooze 10 points, handoff folder .claude/handoff
-● baton: Latest handoff: none
-● baton: Background (last Stop): 0 tasks, 0 one-off schedules, 0 recurring schedules
-● baton: Usage:
-● baton:   /baton           status
-● baton:   /baton now       create a handoff, /clear, and send it to the new session
-● baton:   /baton dry       trial handoff, no /clear
-● baton:   /baton resend    resend a handoff that did not arrive (no /clear)
+Context: 5% (46,405 of 1,000,000 tokens) · threshold 40% (not reached)
+Settings: threshold 40%, snooze 10 points, handoff folder .claude/handoff
+Latest handoff: none
+Background (last Stop): 0 tasks, 0 one-off schedules, 0 recurring schedules
+Usage:
+  /baton           status
+  /baton now       create a handoff, /clear, and send it to the new session
+  /baton dry       trial handoff, no /clear
+  /baton resend    resend a handoff that did not arrive (no /clear)
 ```
 
 **4. Set your threshold (optional).** Run `/config`, find Baton's settings, and change **Handoff threshold (%)**. The default is 40.
@@ -143,17 +143,17 @@ flowchart TD
 |---|---|---|---|
 | Handoff threshold (%) — `thresholdPercent` | `40` | 10–90 | Context usage at which Baton asks |
 | Snooze after No (points) — `snoozePoints` | `10` | 1–50 | After a "No", how many percentage points usage must grow before Baton asks again |
-| Handoff folder — `handoffDir` | `.claude/handoff` | a folder inside the project | Where handoff documents are saved |
+| Handoff folder — `handoffDir` | `.claude/handoff` | a folder inside the project, not inside `.claude/commands`, `agents`, `skills`, `rules` or `output-styles` | Where handoff documents are saved |
 
 The main way to change them is `/config`: find Baton's settings there. Values persist across sessions.
 
-You can also edit your user settings file, `~/.claude/settings.json`. For a marketplace install the key is `baton@baton`:
+You can also edit your user settings file, `~/.claude/settings.json`. For a marketplace install the key is `context-baton@context-baton`:
 
 ```json
-{ "pluginConfigs": { "baton@baton": { "options": { "thresholdPercent": 30 } } } }
+{ "pluginConfigs": { "context-baton@context-baton": { "options": { "thresholdPercent": 30 } } } }
 ```
 
-A copy loaded with `--plugin-dir` uses the key `baton` instead.
+A copy loaded with `--plugin-dir` uses the key `context-baton` instead.
 
 Good to know:
 
@@ -276,10 +276,24 @@ Reports from other platforms are welcome. Please open an issue with your OS, ter
 A mod runs inside Claude Code with your permissions. This is everything Baton does with them:
 
 - **Reads** context usage, the session id and project folder, the number of prompts you have sent (for the pause after a failed handoff), the state of background tasks and subagents, and seven environment variables used to place the handoff folder: `USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`.
-- **Writes** handoff documents to the handoff folder (or `~/.baton/handoff/`), and small entries in its own plugin store (pending handoffs, snooze marks, the latest handoff and failure). Session entries are removed after 30 days.
+- **Reads one file**, `<project>/.git`. In a git worktree that file names the main repository, so all worktrees of one repository share their handoff history and undelivered handoffs. In a normal repository `.git` is a folder; the read fails and is ignored. Baton never reads a handoff document back, or any other file.
+- **Lists** the handoff folder, to show in `/baton` how many `.md` documents it holds.
+- **Writes** exactly one kind of file: `<handoff folder>/<session-id>.md`, or `~/.baton/handoff/<session-id>.md` when redirected (see [Where documents are saved](#where-documents-are-saved)). The code refuses a session id that is not letters, digits, `-` and `_` (at most 128 characters), so the file can neither leave the folder nor get another extension, and the handoff folder setting must stay inside the project and outside the folders Claude Code loads commands, agents, skills, rules and output styles from. It never writes a build, start-up, settings or instructions file.
+- **Stores** small entries in its own plugin store (pending handoffs, snooze marks, the latest handoffs and failure). Session entries are removed after 30 days.
 - **Asks** with Claude Code's own question dialog.
-- **Calls the model** once per handoff, twice if the first document is incomplete, on your own plan or API key.
-- **Runs** `/clear` and submits one prompt, only after you answer "Yes" or run `/baton now`. `/baton resend` submits a saved handoff without clearing.
+- **Calls the model** once per handoff, twice if the first document is incomplete, on your own plan or API key. The call is a fork of the conversation with a fixed prompt asking for the ten-section document.
+- **Submits** the handoff text, the messages you typed during the handoff, and a fixed intro line (with the reason, for example the percentage, and the document's path filled in). If a handoff fails before `/clear`, held messages go back to the old session as you typed them; if it fails after, they are added to the pending handoff for `/baton resend`. Nothing read from a file is submitted.
+- **Runs** `/clear`, only after you answer "Yes" or run `/baton now`, and only once the document is saved. `/baton resend` submits a saved handoff without clearing.
+
+Hooks it registers:
+
+| Hook | What it does |
+|---|---|
+| `classic.Stop` | At the end of a main-conversation turn (not a subagent's, and not when another Stop hook continues the turn): records background work, compares usage with the threshold, snooze and pause, waits while background work runs, and when due asks Yes or No. |
+| `prompt.submit` | While a handoff runs, holds the text you type and delivers it with the handoff (slash commands pass through). Otherwise passes every message unchanged, with a one-time reminder if a handoff was not delivered. On failure the message goes through unchanged. |
+| `command.run` | Answers `/baton` or `/baton-handoff`: status, `now`, `dry`, `resend`. |
+| `session.start` | Registers `/baton` (or `/baton-handoff`), removes its own session entries older than 30 days, and reports rejected settings, an undelivered handoff of this project, and a redirected handoff folder. |
+| `session.end` | When the session ends during a handoff for any reason but `/clear` (exit, closed terminal, another session resumed), makes the handoff stop before `/clear` and submit, keeping the document and the pending text for `/baton resend`. |
 
 It makes no other network requests, runs no external processes, and collects no telemetry. You can list what any mod does before installing it:
 
@@ -311,17 +325,16 @@ npx -p typescript tsc -p .
 - `tsc` needs the type definitions that Claude Code writes to `.claude-plugin/types/` the first time it loads the plugin in an interactive session (`claude --plugin-dir .`).
 - Pure logic lives in `src/` with tests in `tests/`. Every call to the mods API lives in `hooks/register.ts`.
 - Checks that need a real session are listed in [tests/MANUAL.md](../tests/MANUAL.md).
-- The design and its decisions are in [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md).
 
 **Seeing the question without filling a large window.** On accounts where every model has a 1M-token window, even a 10% threshold needs about 100k tokens. For testing, start a session with a 200k window and a low threshold:
 
 ```powershell
-'{ "pluginConfigs": { "baton": { "options": { "thresholdPercent": 10 } } } }' | Set-Content "$HOME\baton-test-settings.json"
+'{ "pluginConfigs": { "context-baton": { "options": { "thresholdPercent": 10 } } } }' | Set-Content "$HOME\baton-test-settings.json"
 $env:CLAUDE_CODE_DISABLE_1M_CONTEXT = "1"
 claude --plugin-dir . --settings "$HOME\baton-test-settings.json" --model haiku
 ```
 
-This loads Baton with `--plugin-dir`, so the settings key is `baton`; for a marketplace install use `baton@baton`. The question then appears at the end of the first turn. Remove the variable afterwards with `Remove-Item Env:CLAUDE_CODE_DISABLE_1M_CONTEXT`. This variable was observed in Claude Code 2.1.295 and may not be officially documented.
+This loads Baton with `--plugin-dir`, so the settings key is `context-baton`; for a marketplace install use `context-baton@context-baton`. The question then appears at the end of the first turn. Remove the variable afterwards with `Remove-Item Env:CLAUDE_CODE_DISABLE_1M_CONTEXT`. This variable was observed in Claude Code 2.1.295 and may not be officially documented.
 
 ## Credits
 

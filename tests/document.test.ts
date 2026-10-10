@@ -9,7 +9,7 @@ const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 // ---------- the prompt ----------
 
-test('prompt: ten numbered sections in the order of section 3.5, Standing instructions second', () => {
+test('prompt: ten numbered sections in order, Standing instructions second', () => {
   expect(SECTIONS.length).toBe(10)
   SECTIONS.forEach((title, i) => expect(HANDOFF_PROMPT).toContain(`## ${i + 1}. ${title}:`))
   expect(SECTIONS[1]).toBe('Standing instructions')

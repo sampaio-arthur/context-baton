@@ -54,7 +54,7 @@ export function statusText(s: StatusInput) {
     ...s.problems.map(p => `${M.ind}${M.cmd.settingIgnored(p)}`),
     ...(s.folder.redirected ? [`${M.ind}${M.cmd.redirected(s.folder.redirected, config.handoffDir, s.folder.shown, s.folder.root)}`] : []),
     ...(s.documents !== undefined ? [M.cmd.documents(s.documents, s.folder.shown)] : []),
-    M.cmd.latest(last ? { at: new Date(last.at).toLocaleString(), kind: last.kind, tokens: String(last.tokens ?? '?'), file: last.file } : undefined),
+    M.cmd.latest(last ? { at: new Date(last.at).toLocaleString(), kind: last.kind, used: String(last.tokens ?? '?'), file: last.file } : undefined),
     ...(last?.usage ? [`${M.ind}${describeUsage(last.usage)}`] : []),
     // A failure older than the latest handoff is no longer news
     ...(failure && (!last || failure.at >= last.at)

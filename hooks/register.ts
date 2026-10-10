@@ -14,8 +14,8 @@ import { M, failureOf, failureText, shortReason } from '../src/messages'
 import { COMMAND, FALLBACK_COMMAND } from '../src/name'
 import { percentOf, shouldPrompt } from '../src/monitor'
 import { statusText, usageText } from '../src/status'
-import { SEEN_KEY, describeUsage, encodeProject, failureKey, handedOffKey, handoffFolder, handoffsKey, latestForeignPending, pendingKey, pruneSeen, snoozeKey, workspaceOf } from '../src/storage'
-import type { Failure, Kind, Pending, Saved, Snooze, Stage, Usage } from '../src/storage'
+import { SEEN_KEY, describeUsage, documentId, encodeProject, failureKey, handedOffKey, handoffFolder, handoffsKey, latestForeignPending, pendingKey, pruneSeen, snoozeKey, workspaceOf } from '../src/storage'
+import type { Failure, HandoffFolder, Kind, Pending, Saved, Snooze, Stage, Usage } from '../src/storage'
 
 // In-process state. A module reload clears it.
 const rt = {
@@ -180,11 +180,16 @@ async function countDocuments($: EngineInterface, dir: string) {
 }
 
 // Writes the document ($.fs.write creates the folders) and returns how the new session and /baton name it:
-// relative to the project, or absolute when the folder was redirected
-async function writeDocument($: EngineInterface, sid: string, text: string, folder: { dir: string; shown: string }) {
-  await $.fs.write(`${folder.dir}/${sid}.md`, `${text}
+// relative to the project, or absolute when the folder was redirected. The only file this plugin writes:
+// <handoff folder>/<session-id>.md, with the id checked by documentId and the rest of the path fixed text
+// wherever it can be (the redirect folder, the separators, the .md extension)
+async function writeDocument($: EngineInterface, sid: string, text: string, folder: HandoffFolder) {
+  const id = documentId(sid)
+  if (folder.redirected) await $.fs.write(`${folder.home}/.baton/handoff/${id}.md`, `${text}
 `)
-  const file = `${folder.shown}/${sid}.md`
+  else await $.fs.write(`${folder.root}/${folder.sub}/${id}.md`, `${text}
+`)
+  const file = `${folder.shown}/${id}.md`
   $.ui.log(M.handoff.writtenLog(file))
   return file
 }
@@ -542,6 +547,20 @@ function logFailure($: EngineInterface, kind: string, text: string) {
   try { $.ui.log(text) } catch {}
 }
 
+// The subcommands of /baton (and of /baton-handoff)
+async function runCommand($: EngineInterface, args: string, settings: { config: Config; problems: readonly string[] }) {
+  const [sub = ''] = args.trim().split(/\s+/)
+  switch (sub) {
+    case '': return show($, await status($, settings))
+    case 'now': return show($, (await handoffNow($, settings.config)).text)
+    // The trial document is returned as the command's output, so it can be read and copied in full
+    case 'dry': return handoffDry($, settings.config)
+    case 'resend': return show($, (await resend($)).text)
+    default: return show($, `${M.cmd.unknown(sub)}
+${usageText()}`)
+  }
+}
+
 // `options` are the plugin's userConfig values, defaults filled in and types checked by the engine. A change
 // to them reloads the plugin and runs register again, which also resets the in-process state above
 export const register: Register = (on, options) => {
@@ -621,20 +640,15 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // One command with subcommands; with no argument it shows status and usage
-  for (const command of [COMMAND, FALLBACK_COMMAND]) on('command.run', { command }, async ($, e) => {
-    const [sub = ''] = e.args.trim().split(/\s+/)
-    switch (sub) {
-      case '': return show($, await status($, settings))
-      case 'now': return show($, (await handoffNow($, settings.config)).text)
-      // The trial document is returned as the command's output, so it can be read and copied in full
-      case 'dry': return handoffDry($, settings.config)
-      case 'resend': return show($, (await resend($)).text)
-      default: return show($, `${M.cmd.unknown(sub)}\n${usageText()}`)
-    }
-  }).catch((_$, e, next) => {
-    // On failure the command answers with a short error. This plugin never runs /baton itself,
-    // so re-entry passes through
+  // One command with subcommands; with no argument it shows status and usage. It answers under its own name and
+  // under the fallback name, each registered with a literal so the validator lists both (it cannot follow a loop
+  // variable). Keep the literals equal to COMMAND and FALLBACK_COMMAND (tests/hooks.test.ts checks this)
+  // On failure a command answers with a short error. This plugin never runs /baton itself, so re-entry passes through
+  on('command.run', { command: 'baton' }, ($, e) => runCommand($, e.args, settings)).catch((_$, e, next) => {
+    if (next.error.kind === 're-entry') return next(e)
+    return { text: M.hook.commandFailed(failureOf(next.error)) }
+  })
+  on('command.run', { command: 'baton-handoff' }, ($, e) => runCommand($, e.args, settings)).catch((_$, e, next) => {
     if (next.error.kind === 're-entry') return next(e)
     return { text: M.hook.commandFailed(failureOf(next.error)) }
   })

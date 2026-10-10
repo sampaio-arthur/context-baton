@@ -19,7 +19,7 @@ const RANGES = {
   snoozePoints: { min: 1, max: 50 },
 } as const
 
-type IntKey = keyof typeof RANGES
+export type IntKey = keyof typeof RANGES
 
 function intValue(key: IntKey, raw: unknown, problems: string[]): number {
   const d = DEFAULTS[key]
@@ -54,11 +54,23 @@ export function projectRelativeDir(raw: string): string | undefined {
   return parts.length === 0 ? undefined : parts.join('/')
 }
 
+// Folders Claude Code loads .md files from as commands, agents, skills, rules or output styles: a handoff document
+// there would become one of them, so the handoff folder may be neither one of these nor inside one
+const LOADED_DIRS = ['.claude/commands', '.claude/agents', '.claude/skills', '.claude/rules', '.claude/output-styles']
+export function isLoadedDir(dir: string) {
+  const d = dir.toLowerCase()
+  return LOADED_DIRS.some(l => d === l || d.startsWith(`${l}/`))
+}
+
 function dirValue(raw: unknown, problems: string[]): string {
   if (raw === undefined) return DEFAULTS.handoffDir
   const dir = typeof raw === 'string' ? projectRelativeDir(raw) : undefined
   if (dir === undefined) {
     problems.push(M.config.badDir(String(raw), DEFAULTS.handoffDir))
+    return DEFAULTS.handoffDir
+  }
+  if (isLoadedDir(dir)) {
+    problems.push(M.config.loadedDir(dir, DEFAULTS.handoffDir))
     return DEFAULTS.handoffDir
   }
   return dir
@@ -77,7 +89,7 @@ export function resolveConfig(options: Readonly<Record<string, unknown>>): { con
 
 // Fixed limits. Values derived from ctx-handoff-mod (MIT, Copyright (c) 2026 cablate).
 
-// Handoffs kept in the store per project; Phase 4 moves documents to files
+// Handoffs kept in the store per project; the documents themselves are files
 export const KEEP_HANDOFFS = 5
 // $.model.fork takes no timeout or abort signal: past this the handoff is abandoned
 // (held messages go back to the old conversation) and a late reply is ignored

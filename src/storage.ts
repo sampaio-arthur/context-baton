@@ -1,9 +1,9 @@
 // Store records, key names, cleanup rules, and the path helpers behind the project key. Pure: no $.
 // Derived from ctx-handoff-mod (MIT, Copyright (c) 2026 cablate).
+import { M } from './messages'
 
 export type Kind = 'threshold' | 'manual' | 'dry'
-// The stage a handoff failed at. `validate` and `write` (the document file) arrive in Phase 4;
-// `write` already covers storing the pending submit before /clear.
+// The stage a handoff failed at. `write` covers saving the document file and storing the pending submit before /clear.
 export type Stage = 'generate' | 'validate' | 'write' | 'clear' | 'submit'
 export type Usage = { input: number; cacheRead: number; cacheCreation: number; output: number; ms: number }
 // The document itself is in the file (`file`, relative to the project); a dry run writes none
@@ -88,18 +88,31 @@ export function resolveDots(p: string) {
 //   C:\WINDOWS\system32 in an administrator shell).
 // `shown` is how the new session and /baton name it: relative to the project, or absolute when redirected.
 // Without a known home folder there is nowhere to redirect to, and the project folder is used
+// `root` + `sub` (the project and the checked handoffDir) or `home` say where the folder is, so the writer can spell
+// the rest of the path as fixed text; `dir` is the same folder in one string.
 export const REDIRECT_DIR = '.baton/handoff'
-export type HandoffFolder = { dir: string; shown: string; redirected: false } | { dir: string; shown: string; redirected: true; why: 'claude' | 'system' }
+export type HandoffFolder =
+  | { dir: string; shown: string; redirected: false; root: string; sub: string }
+  | { dir: string; shown: string; redirected: true; why: 'claude' | 'system'; home: string }
 export function handoffFolder(root: string, handoffDir: string, home: string | undefined, configDir: string | undefined, systemDirs: readonly (string | undefined)[] = []): HandoffFolder {
-  const dir = `${slash(root)}/${handoffDir}`
-  if (!home) return { dir, shown: handoffDir, redirected: false }
+  const project = { dir: `${slash(root)}/${handoffDir}`, shown: handoffDir, redirected: false as const, root: slash(root), sub: handoffDir }
+  if (!home) return project
   const claudeDir = configDir ? slash(configDir) : `${slash(home)}/.claude`
-  const why = isInside(dir, claudeDir) ? 'claude'
+  const why = isInside(project.dir, claudeDir) ? 'claude'
     : systemDirs.some(s => s !== undefined && s.trim() !== '' && isInside(slash(root), slash(s))) ? 'system'
     : undefined
-  if (why === undefined) return { dir, shown: handoffDir, redirected: false }
+  if (why === undefined) return project
   const redirected = `${slash(home)}/${REDIRECT_DIR}`
-  return { dir: redirected, shown: redirected, redirected: true, why }
+  return { dir: redirected, shown: redirected, redirected: true, why, home: slash(home) }
+}
+
+// The file name part of a handoff document, <session-id> in <handoff folder>/<session-id>.md. Claude Code's
+// session ids are UUIDs; any id that is not letters, digits, - and _ (at most 128) is refused, so the name can
+// neither leave the handoff folder nor change the .md extension
+const SESSION_ID = /^[A-Za-z0-9_-]{1,128}$/
+export function documentId(sessionId: string) {
+  if (!SESSION_ID.test(sessionId)) throw new Error(M.handoff.badSessionId(sessionId))
+  return sessionId
 }
 
 // Windows paths compare without case; POSIX paths with it

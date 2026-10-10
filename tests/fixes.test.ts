@@ -1,4 +1,4 @@
-// Fixes after the Phase 5 manual checks: status and replies as separate log lines kept out of the transcript,
+// Fixes after the manual checks: status and replies as separate log lines kept out of the transcript,
 // no self-reference in the document, readable failure sentences, and no question right after a handoff
 import { expect, test } from 'claude-code/testing'
 import { HANDOFF_PROMPT } from '../src/handoff'
@@ -52,9 +52,9 @@ test('prompt: the document must not name its own file, folder, or session id', (
 // ---------- 4. readable failure sentences ----------
 
 test('shortReason: an error code when there is one, else the message without engine prefixes', () => {
-  expect(shortReason('HooksError: baton: $.fs.write(C:\\x\\blocked\\handoff\\S1.md) failed: ENOTDIR: not a directory, mkdir \'C:\\x\\blocked\'')).toBe('ENOTDIR')
+  expect(shortReason('HooksError: context-baton: $.fs.write(C:\\x\\blocked\\handoff\\S1.md) failed: ENOTDIR: not a directory, mkdir \'C:\\x\\blocked\'')).toBe('ENOTDIR')
   expect(shortReason('Error: dropped: submit boom')).toBe('dropped: submit boom')
-  expect(shortReason('HooksError: baton: $.command.run failed: busy')).toBe('busy')
+  expect(shortReason('HooksError: context-baton: $.command.run failed: busy')).toBe('busy')
   expect(shortReason('x'.repeat(200)).length).toBe(120)
 })
 

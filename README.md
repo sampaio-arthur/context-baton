@@ -1,6 +1,6 @@
-# Baton
+# Context Baton
 
-**Ask-first context handoff for Claude Code.** When your context reaches the percentage you choose, Baton asks if you want to hand off. Say yes and it writes a handoff document, starts a fresh session, and delivers the handoff to it. You type nothing else.
+**Ask-first context handoff for Claude Code.** When your context reaches the percentage you choose, Context Baton (Baton for short) asks if you want to hand off. Say yes and it writes a handoff document, starts a fresh session, and delivers the handoff to it. You type nothing else.
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Tested on Claude Code 2.1.295](https://img.shields.io/badge/tested%20on-Claude%20Code%202.1.295-orange)
@@ -38,7 +38,7 @@ Requires Claude Code with mods (on by default from 2.1.287). Tested on 2.1.295. 
 
 ```bash
 claude plugin marketplace add sampaio-arthur/context-baton
-claude plugin install baton@baton
+claude plugin install context-baton@context-baton
 ```
 
 If the install prints "3 userConfig options not yet set", that is informational; the defaults apply.
@@ -50,11 +50,11 @@ git clone https://github.com/sampaio-arthur/context-baton
 claude --plugin-dir ./context-baton
 ```
 
-Start Claude Code in your project, send a message, and run `/baton`. You should see something like:
+Start Claude Code in your project, send a message, and run `/baton`. You should see something like this (Claude Code attributes each line to the `context-baton` plugin; how it marks that depends on the interface):
 
 ```text
-● baton: Context: 5% (46,405 of 1,000,000 tokens) · threshold 40% (not reached)
-● baton: Settings: threshold 40%, snooze 10 points, handoff folder .claude/handoff
+Context: 5% (46,405 of 1,000,000 tokens) · threshold 40% (not reached)
+Settings: threshold 40%, snooze 10 points, handoff folder .claude/handoff
 ```
 
 ## Commands
@@ -104,14 +104,27 @@ Each handoff is saved as `<handoff folder>/<session-id>.md`, written in the lang
 - **Only text is carried over** from messages typed during a handoff; attachments are not.
 - **The check is structural.** It confirms the sections exist, not that their content is right. Use `/baton dry` to read a handoff.
 
-## Security
+## What Baton does on your machine
 
-A mod runs inside Claude Code with your permissions. Baton reads context usage, the session id and project folder, the number of prompts sent, background tasks and subagents, and seven environment variables that place the handoff folder (`USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`). It writes handoff documents and a few entries in its own store, calls the model once per handoff (twice if the first document is incomplete), and runs `/clear` plus one prompt only after you say yes or run `/baton now`. It makes no other network requests, runs no external processes, and collects no telemetry. Inspect it before installing with `claude plugin validate <path>`.
+A mod runs inside Claude Code with your permissions. This is all Baton does with them:
+
+- **Writes** only handoff documents: `<handoff folder>/<session-id>.md`, or `~/.baton/handoff/<session-id>.md` when the handoff folder would be inside Claude Code's own folder or the project is inside a system folder. The name must look like a session id (letters, digits, `-`, `_`) and always ends in `.md`. Baton never writes a build, start-up, settings or instructions file; a handoff folder inside `.claude/commands`, `agents`, `skills`, `rules` or `output-styles` is refused. Its other state lives in the plugin store Claude Code keeps for it.
+- **Reads** one file: `<project>/.git`, so that git worktrees of one repository share their handoff history (in a normal repository this is a folder and the read finds nothing). It also lists the handoff folder to count documents for `/baton`, and reads seven environment variables to place that folder: `USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`.
+- **Prompts it submits:** the handoff text, the messages you typed during the handoff, and a fixed intro line with the reason and the document's path filled in. Nothing read from other files.
+- **Slash commands it runs:** only `/clear`, and only after you answer "Yes" or run `/baton now`. `/baton resend` never clears.
+- **Hooks:**
+  - `classic.Stop`: when a turn ends, checks usage against your threshold and, if due, asks Yes or No.
+  - `prompt.submit`: while a handoff runs, holds what you type and delivers it to the new session; otherwise passes messages through unchanged.
+  - `command.run`: answers `/baton` (or `/baton-handoff`): status, `now`, `dry`, `resend`.
+  - `session.start`: registers `/baton`, removes its own store entries older than 30 days, and reports bad settings, an undelivered handoff, or a redirected folder.
+  - `session.end`: if the session ends during a handoff (other than by `/clear`), stops the handoff before `/clear`, keeping the document.
+
+The handoff itself is written by a fork of the conversation (one model call, two if the first document is incomplete). Baton makes no other network requests, runs no external processes, and collects no telemetry. Details: [Guide, Security and privacy](./docs/GUIDE.md#security-and-privacy).
 
 ## More
 
 - [Guide](./docs/GUIDE.md): full behaviour, failure and recovery table, troubleshooting, Windows notes, FAQ
-- [Manual checks](./tests/MANUAL.md) and [design notes](./IMPLEMENTATION_PLAN.md)
+- [Manual checks](./tests/MANUAL.md)
 
 ## Development
 

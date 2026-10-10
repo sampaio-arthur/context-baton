@@ -1,6 +1,7 @@
 // Every user-facing message. English only. Pure: no $.
 // Wording derived from ctx-handoff-mod's English messages (MIT, Copyright (c) 2026 cablate).
-import { COMMAND, FALLBACK_COMMAND, NAME } from './name'
+import { COMMAND, DISPLAY_NAME, FALLBACK_COMMAND } from './name'
+import type { IntKey } from './config'
 import type { Stage } from './storage'
 
 const s = (n: number) => (n === 1 ? '' : 's')
@@ -67,6 +68,7 @@ export const M = {
     savedAt: (file: string) => `The handoff is also saved at ${file}.`,
     retryLog: (problems: string) => `handoff incomplete (${problems}), asking once more`,
     writtenLog: (file: string) => `handoff saved to ${file}`,
+    badSessionId: (sid: string) => `the session id ${JSON.stringify(sid.slice(0, 40))} is not a valid document name`,
     sessionEnding: (reason: string) => `the session is ending (${reason})`,
     sessionChanged: 'the session changed while the handoff was being made (a /clear or /resume)',
     notDelivered: (why: string, file: string) =>
@@ -84,9 +86,10 @@ export const M = {
   },
 
   config: {
-    notInteger: (key: string, value: string, d: number) => `${key}: ${value} is not a whole number, using ${d}`,
-    outOfRange: (key: string, value: number, min: number, max: number, d: number) => `${key}: ${value} is outside ${min}–${max}, using ${d}`,
-    badDir: (value: string, d: string) => `handoffDir: "${value}" is not a folder inside the project, using ${d}`,
+    notInteger: (setting: IntKey, given: string, d: number) => `${setting}: ${given} is not a whole number, using ${d}`,
+    outOfRange: (setting: IntKey, given: number, min: number, max: number, d: number) => `${setting}: ${given} is outside ${min}–${max}, using ${d}`,
+    badDir: (given: string, d: string) => `handoffDir: "${given}" is not a folder inside the project, using ${d}`,
+    loadedDir: (given: string, d: string) => `handoffDir: "${given}" is a folder Claude Code loads commands, agents, skills, rules or output styles from, using ${d}`,
     problemsLog: (problems: readonly string[]) => `settings ignored: ${problems.join('; ')}`,
   },
 
@@ -96,7 +99,7 @@ export const M = {
   },
 
   start: {
-    description: `${NAME}: status; now / dry / resend`,
+    description: `${DISPLAY_NAME}: status; now / dry / resend`,
     taken: (err: string) => `/${COMMAND} is already taken (${err}), using /${FALLBACK_COMMAND} instead`,
     registerFailed: (err: string) => `could not register the command: ${err}`,
     pruneFailed: (err: string) => `could not tidy the store at startup: ${err}`,
@@ -125,8 +128,8 @@ export const M = {
       `  /${COMMAND} dry       trial handoff, no /clear`,
       `  /${COMMAND} resend    resend a handoff that did not arrive (no /clear)`,
     ],
-    context: (percent: number, tokens: string, window: string, threshold: number, reached: boolean) =>
-      `Context: ${percent}% (${tokens} of ${window} tokens) · threshold ${threshold}% (${reached ? 'reached' : 'not reached'})`,
+    context: (percent: number, used: string, window: string, threshold: number, reached: boolean) =>
+      `Context: ${percent}% (${used} of ${window} tokens) · threshold ${threshold}% (${reached ? 'reached' : 'not reached'})`,
     contextUnknown: (window: string, threshold: number) =>
       `Context: not measured yet (start of session or right after /clear; window ${window} tokens) · threshold ${threshold}%`,
     settings: (threshold: number, snooze: number, dir: string) =>
@@ -144,8 +147,8 @@ export const M = {
     settingIgnored: (problem: string) => `Setting ignored: ${problem}`,
     snoozed: (mark: number, after: 'no' | 'handoff') =>
       `Snoozed after ${after === 'handoff' ? 'the handoff that started this session' : 'a No'}: will ask again at ${mark}%`,
-    latest: (last: { at: string; kind: string; tokens: string; file?: string } | undefined) =>
-      `Latest handoff: ${last ? `${last.at} ${last.kind}, context ${last.tokens}${last.file ? `, saved to ${last.file}` : ''}` : 'none'}`,
+    latest: (last: { at: string; kind: string; used: string; file?: string } | undefined) =>
+      `Latest handoff: ${last ? `${last.at} ${last.kind}, context ${last.used}${last.file ? `, saved to ${last.file}` : ''}` : 'none'}`,
     latestFailure: (at: string, kind: string, stage: Stage, reason: string) => `Latest failure: ${at} ${kind}, stage ${stage}: ${reason}`,
     undelivered: `Undelivered handoff: yes (/${COMMAND} resend to send it again)`,
     inProgress: 'A handoff is in progress',
@@ -156,8 +159,8 @@ export const M = {
     busy: 'Another handoff is in progress',
     nowStarted: 'Creating the handoff, then /clear and send it',
     dryFailed: 'Trial run failed, see the log above for the reason',
-    dryDone: (tokens: string, retried: boolean) =>
-      `Trial run done (no /clear, nothing saved), context ${tokens}${retried ? '; the first attempt was incomplete and was retried once' : ''}`,
+    dryDone: (used: string, retried: boolean) =>
+      `Trial run done (no /clear, nothing saved), context ${used}${retried ? '; the first attempt was incomplete and was retried once' : ''}`,
     resendIntro: 'Resending the previous handoff. Read it, tell me in a few lines the current state and next step as you understand them, then wait for the user\'s instructions. Do not start working yet.',
     nothingToResend: 'No handoff to resend in this session',
     resendFailed: (err: string) => `resend failed: ${err}`,

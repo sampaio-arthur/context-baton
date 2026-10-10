@@ -1,6 +1,6 @@
 // The handoff engine kept from ctx-handoff-mod: /baton now, dry, resend, held messages, stage-named failures
 import { expect, test } from 'claude-code/testing'
-import { HANDOFF, PROJECT, cmd, gate, say, startSession, stop, world, showStatus } from './world'
+import { HANDOFF, PROJECT, cmd, composer, gate, presentation, say, startSession, stop, world, showStatus } from './world'
 
 test('/baton now returns at once, then forks once, clears once, submits once', async ($, on) => {
   const w = world(on)
@@ -159,4 +159,17 @@ test('falls back to /baton-handoff when /baton is taken', async ($, on) => {
   await startSession($)
   expect(w.ctl.registered).toEqual(['baton', 'baton-handoff'])
   expect(w.logs.join()).toContain('using /baton-handoff instead')
+})
+
+test('/baton-handoff answers the same subcommands as /baton', async ($, on) => {
+  const w = world(on)
+  w.ctl.taken.add('baton')
+  await startSession($)
+  const run = (args: string) => $.command.run({ command: 'baton-handoff', args, origin: composer, presentation })
+  const before = w.logs.length
+  await run('')
+  const shown = w.logs.slice(before).join(' ')
+  expect(shown).toContain('/baton resend')
+  const bad = await run('nonsense')
+  expect(JSON.stringify(bad) + w.logs.join(' ')).toContain('Unknown subcommand')
 })

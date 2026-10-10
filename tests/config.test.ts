@@ -1,6 +1,6 @@
 // Configuration: defaults and validation (src/config.ts), and what /baton shows for it
 import { expect, test } from 'claude-code/testing'
-import { DEFAULTS, projectRelativeDir, resolveConfig } from '../src/config'
+import { DEFAULTS, isLoadedDir, projectRelativeDir, resolveConfig } from '../src/config'
 import { cmd, startSession, world, showStatus } from './world'
 
 test('no options: the defaults, no problems', () => {
@@ -45,6 +45,19 @@ test('handoffDir must stay inside the project', () => {
   expect(resolveConfig({ handoffDir: '../outside' })).toEqual({
     config: DEFAULTS,
     problems: ['handoffDir: "../outside" is not a folder inside the project, using .claude/handoff'],
+  })
+})
+
+test('handoffDir may not be a folder Claude Code loads commands, agents, skills, rules or output styles from', () => {
+  for (const bad of ['.claude/commands', '.claude/rules/handoff', '.CLAUDE/Agents', '.claude/skills/x', '.claude/output-styles']) {
+    expect(isLoadedDir(bad)).toBe(true)
+  }
+  for (const ok of ['.claude/handoff', '.claude', '.claude/commands-notes', 'docs/rules', 'notes/.claude/rules-old']) {
+    expect(isLoadedDir(ok)).toBe(false)
+  }
+  expect(resolveConfig({ handoffDir: './.claude\\rules/' })).toEqual({
+    config: DEFAULTS,
+    problems: ['handoffDir: ".claude/rules" is a folder Claude Code loads commands, agents, skills, rules or output styles from, using .claude/handoff'],
   })
 })
 

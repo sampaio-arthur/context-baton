@@ -1,5 +1,6 @@
 {
-  "name": "baton",
+  "name": "context-baton",
+  "displayName": "Context Baton",
   "version": "0.1.0",
   "description": "Ask-first context handoff: at a context percentage you choose, asks whether to hand off, then writes a structured handoff and continues in a fresh session",
   "author": {
@@ -14,6 +15,7 @@
     "session",
     "mod"
   ],
+  "icon": "./.claude-plugin/icon.png",
   "userConfig": {
     "thresholdPercent": {
       "type": "number",

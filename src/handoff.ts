@@ -1,6 +1,6 @@
 // The handoff document: generation prompt, structural validation, retry prompt, and the text submitted to the
 // new session. Pure: no $. The format is the one inherited from ctx-handoff-mod (MIT, Copyright (c) 2026
-// cablate) plus a Standing instructions section, with numbered headings (IMPLEMENTATION_PLAN.md section 3.5).
+// cablate) plus a Standing instructions section, with numbered headings.
 import { M } from './messages'
 import { TAG } from './name'
 

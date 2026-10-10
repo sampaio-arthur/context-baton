@@ -2,7 +2,16 @@
 import { expect, test } from 'claude-code/testing'
 import { snapshotOf } from '../src/deferral'
 import { forkFailure, submitText } from '../src/handoff'
+import { COMMAND, DISPLAY_NAME, FALLBACK_COMMAND, NAME, TAG } from '../src/name'
 import { encodeProject, pruneSeen, workspaceOf } from '../src/storage'
+
+test('names: the plugin is context-baton; the command, its fallback, and the tag keep the short name', () => {
+  expect(NAME).toBe('context-baton')
+  expect(DISPLAY_NAME).toBe('Context Baton')
+  expect(COMMAND).toBe('baton')
+  expect(FALLBACK_COMMAND).toBe('baton-handoff')
+  expect(TAG).toBe('[baton]')
+})
 
 test('snapshotOf counts running tasks and splits one-shot from recurring schedules', () => {
   expect(snapshotOf({

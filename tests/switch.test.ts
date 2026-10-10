@@ -3,7 +3,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import { RETRY_MS, retryPaused } from '../src/deferral'
-import { handoffFolder, latestForeignPending } from '../src/storage'
+import { documentId, handoffFolder, latestForeignPending } from '../src/storage'
 import { HANDOFF, HOME, PROJECT, cmd, gate, say, showStatus, startSession, stop, world } from './world'
 
 const ORDER = ['fork', 'write', 'pending:set', 'clear', 'submit', 'pending:delete']
@@ -15,9 +15,9 @@ const endSession = ($: Engine, reason: string, sessionId = 'S1') =>
 
 test('handoffFolder: the project folder normally, ~/.baton/handoff when it would be inside Claude Code\'s folder', () => {
   expect(handoffFolder('C:/proj', '.claude/handoff', 'C:/Users/u', undefined))
-    .toEqual({ dir: 'C:/proj/.claude/handoff', shown: '.claude/handoff', redirected: false })
+    .toEqual({ dir: 'C:/proj/.claude/handoff', shown: '.claude/handoff', redirected: false, root: 'C:/proj', sub: '.claude/handoff' })
   expect(handoffFolder('C:/Users/u', '.claude/handoff', 'C:/Users/u', undefined))
-    .toEqual({ dir: 'C:/Users/u/.baton/handoff', shown: 'C:/Users/u/.baton/handoff', redirected: true, why: 'claude' })
+    .toEqual({ dir: 'C:/Users/u/.baton/handoff', shown: 'C:/Users/u/.baton/handoff', redirected: true, why: 'claude', home: 'C:/Users/u' })
   // Windows paths compare without case; backslashes are normalised
   expect(handoffFolder('c:\\users\\U\\', '.claude/handoff', 'C:\\Users\\u', undefined).redirected).toBe(true)
   // POSIX paths compare with case
@@ -30,6 +30,29 @@ test('handoffFolder: the project folder normally, ~/.baton/handoff when it would
   expect(handoffFolder('C:/Users/u', '.claude-notes/handoff', 'C:/Users/u', undefined).redirected).toBe(false)
   // No home known: no redirect
   expect(handoffFolder('C:/Users/u', '.claude/handoff', undefined, undefined).redirected).toBe(false)
+})
+
+test('documentId: only a session-id-shaped name, so the file is always <handoff folder>/<session-id>.md', () => {
+  expect(documentId('5d5c9ead-3f0e-4a7b-9c51-2b8e1f6d0a43')).toBe('5d5c9ead-3f0e-4a7b-9c51-2b8e1f6d0a43')
+  expect(documentId('S1')).toBe('S1')
+  expect(documentId('a'.repeat(128))).toBe('a'.repeat(128))
+  // Anything that could leave the folder, add a folder, or change the extension is refused
+  for (const bad of ['', '.', '..', '../x', '..\\x', 'a/b', 'a\\b', 'C:x', 'x.md', 'x.json', 'x\n', ' x', 'a'.repeat(129)]) {
+    expect(() => documentId(bad)).toThrow('is not a valid document name')
+  }
+})
+
+test('a session id that is not session-id-shaped: nothing written, nothing cleared, write failure recorded', async ($, on) => {
+  const w = world(on)
+  w.ctl.sid = '../../escape'
+  await cmd($, 'now')
+  await w.clock.settle()
+  expect([...w.files.keys()]).toEqual([])
+  expect(w.commands).toEqual([])
+  expect(w.submits).toEqual([])
+  expect(w.ops).toEqual(['fork'])
+  expect((w.get(`failure:${PROJECT}`) as { stage: string }).stage).toBe('write')
+  expect(w.logs.join()).toContain('is not a valid document name')
 })
 
 test('latestForeignPending: newest settled pending of this project from another session', () => {
@@ -295,7 +318,7 @@ const SYSTEM = [WINDOWS, WINDOWS, win('C:', 'Program Files'), win('C:', 'Program
 
 test('handoffFolder: a project root inside the Windows folder or Program Files is redirected', () => {
   expect(handoffFolder(SYSTEM32, '.claude/handoff', 'C:/Users/u', undefined, SYSTEM))
-    .toEqual({ dir: 'C:/Users/u/.baton/handoff', shown: 'C:/Users/u/.baton/handoff', redirected: true, why: 'system' })
+    .toEqual({ dir: 'C:/Users/u/.baton/handoff', shown: 'C:/Users/u/.baton/handoff', redirected: true, why: 'system', home: 'C:/Users/u' })
   // Case does not matter on Windows
   expect(handoffFolder('c:/windows/System32', '.claude/handoff', 'C:/Users/u', undefined, SYSTEM).redirected).toBe(true)
   expect(handoffFolder('C:/Program Files/Tool', 'notes', 'C:/Users/u', undefined, SYSTEM).redirected).toBe(true)
