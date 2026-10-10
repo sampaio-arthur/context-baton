@@ -109,12 +109,6 @@ export function world(on: On, tokensOrNull: number | null = 400_000, window = 1_
   on('env.get', (_$, e: { name: string }) => ({ value: ctl.env[e.name] }))
   // Written files by path, forward slashes
   const files = new Map<string, string>()
-  on('fs.list', (_$, e: { path?: string }) => {
-    const dir = `${(e.path ?? '').split(String.fromCharCode(92)).join('/').replace(/\/+$/, '')}/`
-    const names = [...files.keys()].filter(f => f.startsWith(dir) && !f.slice(dir.length).includes('/')).map(f => f.slice(dir.length))
-    if (names.length === 0) return { deny: 'ENOENT' }
-    return { value: names.map(name => ({ name, kind: 'file', size: 1, mtimeMs: 0, isLink: false })) as never }
-  })
   on('fs.write', (_$, e: { path: string; text: string }) => {
     if (ctl.failWrite) return { deny: 'disk full' }
     files.set(e.path.split(String.fromCharCode(92)).join('/'), e.text)

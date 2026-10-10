@@ -24,9 +24,8 @@ export type StatusInput = {
   snapshot: Snapshot | undefined
   // A handoff the threshold calls for, held back by running background work
   deferring?: { tasks: number; oneShot: number; agents: number }
-  // Where documents go, and how many .md files that folder holds (undefined when it cannot be listed)
+  // Where documents go
   folder: { shown: string; redirected?: 'claude' | 'system'; root: string }
-  documents: number | undefined
   // The question is paused after a failed handoff
   pause?: { turnsLeft: number; until: string }
   // An undelivered handoff of another session of this project
@@ -53,7 +52,7 @@ export function statusText(s: StatusInput) {
     M.cmd.settings(config.thresholdPercent, config.snoozePoints, config.handoffDir),
     ...s.problems.map(p => `${M.ind}${M.cmd.settingIgnored(p)}`),
     ...(s.folder.redirected ? [`${M.ind}${M.cmd.redirected(s.folder.redirected, config.handoffDir, s.folder.shown, s.folder.root)}`] : []),
-    ...(s.documents !== undefined ? [M.cmd.documents(s.documents, s.folder.shown)] : []),
+    M.cmd.documents(s.folder.shown),
     M.cmd.latest(last ? { at: new Date(last.at).toLocaleString(), kind: last.kind, used: String(last.tokens ?? '?'), file: last.file } : undefined),
     ...(last?.usage ? [`${M.ind}${describeUsage(last.usage)}`] : []),
     // A failure older than the latest handoff is no longer news

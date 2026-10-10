@@ -166,15 +166,6 @@ async function documentFolder($: EngineInterface, config: Config) {
   return handoffFolder(await $.session.root(), config.handoffDir, home, await $.env.get('CLAUDE_CONFIG_DIR'), systemDirs)
 }
 
-// How many .md documents the folder holds; undefined when it cannot be listed (for example not created yet)
-async function countDocuments($: EngineInterface, dir: string) {
-  try {
-    return (await $.fs.list(dir)).filter(f => f.kind === 'file' && f.name.endsWith('.md')).length
-  } catch {
-    return undefined
-  }
-}
-
 // Writes the document ($.fs.write creates the folders) and returns how the new session and /baton name it:
 // relative to the project, or absolute when the folder was redirected. The only file this plugin writes:
 // <handoff folder>/<session-id>.md, with the id checked by documentId and the rest of the path fixed text
@@ -443,7 +434,6 @@ async function status($: EngineInterface, settings: { config: Config; problems: 
     snapshot: rt.snapshot,
     ...(rt.deferring ? { deferring: rt.deferring } : {}),
     folder: { shown: folder.shown, root: await $.session.root(), ...(folder.redirected ? { redirected: folder.why } : {}) },
-    documents: await countDocuments($, folder.dir),
     ...(pause ? { pause } : {}),
     ...(foreign ? { foreignPending: { sessionId: foreign.sessionId, ...(foreign.file ? { file: foreign.file } : {}) } } : {}),
   })

@@ -169,7 +169,7 @@ You do not need any of these in the normal flow.
 
 | Command | What it does |
 |---|---|
-| `/baton` | Shows context usage, threshold, snooze or pause state, waiting for background work, settings, saved documents, and the latest handoff or failure |
+| `/baton` | Shows context usage, threshold, snooze or pause state, waiting for background work, settings, where documents are saved, and the latest handoff or failure |
 | `/baton now` | Hands off immediately, without waiting for the threshold or asking |
 | `/baton dry` | Generates and shows a handoff. It writes no document and clears nothing (it records the run's metadata in Baton's store) |
 | `/baton resend` | Delivers a handoff that was saved but did not reach a session |
@@ -207,7 +207,7 @@ What to expect from it:
 
 - `<handoff folder>/<session-id>.md`, inside your project. The new session is told the path.
 - Documents go to `~/.baton/handoff/` instead when the handoff folder would land inside Claude Code's config folder (`~/.claude`, or `CLAUDE_CONFIG_DIR` if set), which happens with the default folder when the project is your home folder, or when the project is inside a system folder (the Windows folder or Program Files). Baton tells you when this happens, at session start and in `/baton`.
-- **Baton never deletes documents.** `/baton` shows how many are saved; remove old ones when you no longer need them.
+- **Baton never deletes documents.** `/baton` shows where they are saved; remove old ones when you no longer need them.
 - Documents are UTF-8. In Windows PowerShell 5.1, read them with `Get-Content <file> -Encoding UTF8`.
 - Consider adding the handoff folder to `.gitignore`.
 
@@ -276,8 +276,7 @@ Reports from other platforms are welcome. Please open an issue with your OS, ter
 A mod runs inside Claude Code with your permissions. This is everything Baton does with them:
 
 - **Reads** context usage, the session id and project folder, the number of prompts you have sent (for the pause after a failed handoff), the state of background tasks and subagents, and seven environment variables used to place the handoff folder: `USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`.
-- **Reads no files.** Baton never reads a handoff document back, or any other file. A git worktree is its own project: its handoff history and undelivered handoffs are not shared with other worktrees of the same repository.
-- **Lists** the handoff folder, only to show in `/baton` how many `.md` documents it holds. File names are counted, not read.
+- **Reads no files and lists no folders.** Baton only writes handoff documents. It never reads a handoff document back, or any other file. A git worktree is its own project: its handoff history and undelivered handoffs are not shared with other worktrees of the same repository.
 - **Writes** exactly one kind of file: `<handoff folder>/<session-id>.md`, or `~/.baton/handoff/<session-id>.md` when redirected (see [Where documents are saved](#where-documents-are-saved)). The code refuses a session id that is not letters, digits, `-` and `_` (at most 128 characters), so the file can neither leave the folder nor get another extension, and the handoff folder setting must stay inside the project and outside the folders Claude Code loads commands, agents, skills, rules and output styles from. It never writes a build, start-up, settings or instructions file.
 - **Stores** small entries in its own plugin store (pending handoffs, snooze marks, the latest handoffs and failure). Session entries are removed after 30 days.
 - **Asks** with Claude Code's own question dialog.

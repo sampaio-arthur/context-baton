@@ -288,24 +288,27 @@ test('project root is the home folder: the document goes to ~/.baton/handoff, an
   expect(w.submits[0]).toContain('The handoff is also saved at C:/Users/u/.baton/handoff/S1.md.')
   const text = (await showStatus($)).text
   expect(text).toContain('Handoff folder .claude/handoff would be inside Claude Code\'s own folder, so documents go to C:/Users/u/.baton/handoff')
-  expect(text).toContain('Handoff documents: 1 in C:/Users/u/.baton/handoff')
+  expect(text).toContain('Handoff documents are saved in C:/Users/u/.baton/handoff. Baton never deletes them')
 })
 
 // ---------- /baton status ----------
 
-test('/baton status is logged, not returned as transcript text, and counts the documents', async ($, on) => {
+test('/baton status is logged, not returned as transcript text, and says where documents are saved', async ($, on) => {
   const w = world(on)
   await cmd($, 'now')
   await w.clock.settle()
   const { reply, text } = await showStatus($)
   expect(reply.text).toBeUndefined()
-  expect(text).toContain('Handoff documents: 1 in .claude/handoff (old ones are not deleted automatically')
+  expect(text).toContain('Handoff documents are saved in .claude/handoff. Baton never deletes them')
   expect(text).not.toContain('keep')
 })
 
-test('/baton status before any document: no count line', async ($, on) => {
-  world(on)
-  expect((await showStatus($)).text).not.toContain('Handoff documents')
+test('/baton status before any document: the same static line, no count', async ($, on) => {
+  const w = world(on)
+  const text = (await showStatus($)).text
+  expect(text).toContain('Handoff documents are saved in .claude/handoff. Baton never deletes them')
+  expect(text).not.toMatch(/Handoff documents: \d/)
+  expect([...w.files.keys()]).toEqual([])
 })
 
 // ---------- system folder as project root ----------

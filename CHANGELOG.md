@@ -10,7 +10,7 @@ First version, derived from [ctx-handoff-mod](https://github.com/cablate/ctx-han
 
 #### Added
 - Plugin and marketplace name `context-baton`, display name "Context Baton", with a listing icon. Install with `claude plugin install context-baton@context-baton`; settings live under `pluginConfigs["context-baton@context-baton"]`. The command stays `/baton` (fallback `/baton-handoff`) and submitted text keeps the `[baton]` tag.
-- Baton reads no files. The project key comes from the session root alone, so a git worktree is its own project and does not share handoff history with other worktrees of the same repository. The only folder access besides writing is a listing of the handoff folder, to count documents for `/baton`.
+- Baton reads no files and lists no folders; it only writes handoff documents. The project key comes from the session root alone, so a git worktree is its own project and does not share handoff history with other worktrees of the same repository. `/baton` says where documents are saved and that they are never deleted; it does not count them.
 - The only file Baton writes is `<handoff folder>/<session-id>.md`: a session id that is not letters, digits, `-` and `_` is refused before anything is written, and a handoff folder inside `.claude/commands`, `agents`, `skills`, `rules` or `output-styles` falls back to the default.
 - Percentage threshold (`thresholdPercent`, 10–90, default 40), using Claude Code's own context percentage.
 - Consent question at the end of a turn. Only "Yes" hands off; "No", Esc, a timeout, typed text, or a rejected dialog count as "No". A rejection other than closing the dialog is logged once per session.

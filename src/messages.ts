@@ -137,8 +137,8 @@ export const M = {
     redirected: (why: 'claude' | 'system', configured: string, used: string, root: string) => why === 'claude'
       ? `Handoff folder ${configured} would be inside Claude Code's own folder, so documents go to ${used}`
       : `The project folder ${root} is a system folder, so documents go to ${used}`,
-    documents: (n: number, folder: string) =>
-      `Handoff documents: ${n} in ${folder} (old ones are not deleted automatically; remove them when you no longer need them)`,
+    documents: (folder: string) =>
+      `Handoff documents are saved in ${folder}. Baton never deletes them; remove old ones when you no longer need them`,
     paused: (turnsLeft: number, until: string) =>
       `Paused after a failed handoff: will ask again after ${turnsLeft} more message${s(turnsLeft)} or at ${until}, whichever comes first`,
     foreignPending: (sid: string, file: string | undefined) =>

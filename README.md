@@ -109,7 +109,7 @@ Each handoff is saved as `<handoff folder>/<session-id>.md`, written in the lang
 A mod runs inside Claude Code with your permissions. This is all Baton does with them:
 
 - **Writes** only handoff documents: `<handoff folder>/<session-id>.md`, or `~/.baton/handoff/<session-id>.md` when the handoff folder would be inside Claude Code's own folder or the project is inside a system folder. The name must look like a session id (letters, digits, `-`, `_`) and always ends in `.md`. Baton never writes a build, start-up, settings or instructions file; a handoff folder inside `.claude/commands`, `agents`, `skills`, `rules` or `output-styles` is refused. Its other state lives in the plugin store Claude Code keeps for it.
-- **Reads no files.** It lists the handoff folder to count documents for `/baton` (names only), and reads seven environment variables to place that folder: `USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`.
+- **Reads no files and lists no folders.** It only writes handoff documents. It reads seven environment variables to place that folder: `USERPROFILE`, `HOME`, `CLAUDE_CONFIG_DIR`, `SystemRoot`, `WINDIR`, `ProgramFiles`, `ProgramFiles(x86)`.
 - **Prompts it submits:** the handoff text, the messages you typed during the handoff, and a fixed intro line with the reason and the document's path filled in. Nothing read from other files.
 - **Slash commands it runs:** only `/clear`, and only after you answer "Yes" or run `/baton now`. `/baton resend` never clears.
 - **Hooks:**
